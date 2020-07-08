@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Security.Cryptography;
 using UnityEngine;
+
 
 public class LensInteractionScript : MonoBehaviour, InteractionScriptI
 {
@@ -13,7 +15,7 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
     {
         if(radius1>0 & radius2 > 0)
         {
-            if(radius1+radius2>= thinkness+ Math.Sqrt(length * 2 + radius1*2) + Math.Sqrt(length * 2 + radius2 * 2))
+            if(radius1+radius2<= thinkness+ Math.Sqrt(-length * 2 + radius1*2) + Math.Sqrt(-length * 2 + radius2 * 2))
             {
                 throw new ArgumentOutOfRangeException("The given values for the lens are impossible");
             }
@@ -32,7 +34,7 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
     private List<Tuple<List<Vector3>, Vector3>> RefractSingleBeam(DiscreteBeam descreteBeam)
     {
         ;
-        var incomingPoint = LensObject.transform.InverseTransformPoint(descreteBeam.LastCoordinate);
+        var incomingPoint = ReverseScalingOnInverse( LensObject.transform.InverseTransformPoint(descreteBeam.LastCoordinate), LensObject.transform.localScale);
         var incomingDirection = LensObject.transform.InverseTransformDirection(descreteBeam.DirectionOfPropagation);
 
         double zf, zb;
@@ -56,8 +58,10 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
         {
             var firstInterceptionPoint = CalculatePointOfIntersection(incomingPoint, incomingDirection, radius1, zf);
             var firstRefractedDirection = CalculateRefractionDirection(incomingDirection, firstInterceptionPoint, Convert.ToSingle(zf), Convert.ToSingle(coef));
-            var secondInterceptionPoint = CalculatePointOfIntersection(firstInterceptionPoint, firstRefractedDirection, radius2, zb);
+            var secondInterceptionPoint = CalculatePointOfIntersection(firstInterceptionPoint, firstRefractedDirection, -radius2, zb);
             var secondRefractionDirection = CalculateRefractionDirection(firstRefractedDirection, secondInterceptionPoint, Convert.ToSingle(zb), Convert.ToSingle(1 / coef));
+
+            ;
 
             return new List<Tuple<List<Vector3>, Vector3>>()
             {
@@ -65,18 +69,24 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
                 (
                     new List<Vector3>()
                     {
-                        firstInterceptionPoint,secondInterceptionPoint
-                    },secondRefractionDirection
+                        TransformPoint(firstInterceptionPoint,LensObject.transform.localScale),
+                        TransformPoint( secondInterceptionPoint,LensObject.transform.localScale)
+                    },LensObject.transform.TransformDirection( secondRefractionDirection)
                 )
             };
         }
         else
         {
-            
+            ;
             var firstInterceptionPoint = CalculatePointOfIntersection(incomingPoint, incomingDirection, radius2, zb);
             var firstRefractedDirection = CalculateRefractionDirection(incomingDirection, firstInterceptionPoint, Convert.ToSingle(zb), Convert.ToSingle(coef));
-            var secondInterceptionPoint = CalculatePointOfIntersection(firstInterceptionPoint, firstRefractedDirection, radius1, zf);
+            var secondInterceptionPoint = CalculatePointOfIntersection(firstInterceptionPoint, firstRefractedDirection, -radius1, zf);
             var secondRefractionDirection = CalculateRefractionDirection(firstRefractedDirection, secondInterceptionPoint, Convert.ToSingle(zf), Convert.ToSingle(1 / coef));
+            ;
+            var a = TransformPoint(firstInterceptionPoint, LensObject.transform.localScale);
+            var b = TransformPoint(secondInterceptionPoint, LensObject.transform.localScale);
+
+            ;
 
             return new List<Tuple<List<Vector3>, Vector3>>()
             {
@@ -84,7 +94,8 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
                 (
                     new List<Vector3>()
                     {
-                        LensObject.transform.TransformPoint( firstInterceptionPoint),LensObject.transform.TransformPoint(secondInterceptionPoint)
+                        TransformPoint(firstInterceptionPoint,LensObject.transform.localScale),
+                        TransformPoint( secondInterceptionPoint,LensObject.transform.localScale)
                     },LensObject.transform.TransformDirection( secondRefractionDirection)
                 )
             };
@@ -95,41 +106,80 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
     private Vector3 CalculatePointOfIntersection(Vector3 incomingPoint, Vector3 incomingDirection, double radius, double zp)
     {
         
-        var b = 2 * incomingPoint.x * incomingDirection.x / incomingDirection.z
-            + 2 * incomingPoint.y * incomingDirection.y / incomingDirection.z
-            - 2 * incomingDirection.x * incomingDirection.x * incomingPoint.z / (incomingDirection.z * incomingDirection.z)
-            - 2 * incomingDirection.y * incomingDirection.y * incomingPoint.z / (incomingDirection.z * incomingDirection.z)
-            - 2 * zp;
-        var a = incomingDirection.x * incomingDirection.x / (incomingDirection.z * incomingDirection.z)
-            + incomingDirection.y * incomingDirection.y / (incomingDirection.z * incomingDirection.z)
-            + 1;
-        var c = -2 * incomingPoint.z * incomingPoint.x * incomingDirection.x / incomingDirection.z
-            - 2 * incomingPoint.z * incomingPoint.y * incomingDirection.y / incomingDirection.z
-            + 2 * incomingDirection.x * incomingDirection.x * incomingPoint.z * incomingPoint.z / (incomingDirection.z * incomingDirection.z)
-            + 2 * incomingDirection.y * incomingDirection.y * incomingPoint.z * incomingPoint.z / (incomingDirection.z * incomingDirection.z)
+        var b = 2 * incomingPoint.x * incomingDirection.x
+            + 2 * incomingPoint.y * incomingDirection.y
+            + 2 * incomingPoint.z * incomingDirection.z
+            - 2* zp * incomingDirection.z;
+        var a = incomingDirection.x * incomingDirection.x
+            + incomingDirection.y * incomingDirection.y 
+            + incomingDirection.z * incomingDirection.z;
+        var c = 
             + zp * zp
             - radius * radius
             + incomingPoint.x * incomingPoint.x
-            + incomingPoint.y * incomingPoint.y;
+            + incomingPoint.y * incomingPoint.y
+            + incomingPoint.z * incomingPoint.z
+            -2*zp*incomingPoint.z;
 
         if (b * b - 4 * a * c < 0 )
         {
             throw new ArgumentOutOfRangeException("The given ray does not intercept the lens.");
         }
 
-        var z1 = (-b + Math.Sqrt(b*b - 4*a*c))/2*a;
-        var z2 = (-b + Math.Sqrt(b * b - 4 * a * c)) / 2 * a;
+        var t1= Convert.ToSingle((-b + Math.Sqrt(b * b - 4 * a * c)) / (2 * a));
+        var t2 = Convert.ToSingle((-b - Math.Sqrt(b * b - 4 * a * c)) / (2 * a));
 
+        var point1 = CalculatePointFromT(incomingPoint, incomingDirection, Convert.ToSingle(t1));
+        var point2 = CalculatePointFromT(incomingPoint, incomingDirection, Convert.ToSingle(t2));
         ;
-
-        if( (incomingPoint.z-z1)* (incomingPoint.z - z1) > (incomingPoint.z - z2)* (incomingPoint.z - z2))
+        if( (point1 - incomingDirection).normalized != (point1 - incomingDirection).normalized)
         {
-            return CalculatePointFromZ( incomingPoint,  incomingDirection, Convert.ToSingle( z2));
+            throw new Exception("Calculated values for interception point do not lie on the same line.");
+        }
+
+        if ((point1 - incomingPoint).normalized == incomingDirection)
+        {
+            if ((point2 - incomingPoint).normalized == incomingDirection)
+            {
+                if (radius < 0)
+                {
+                    if ((point1 - incomingPoint).magnitude < (point2 - incomingPoint).magnitude)
+                    {
+                        return point1;
+                    }
+                    else
+                    {
+                        return point2;
+                    }
+                }
+                else
+                {
+                    if ((point1 - incomingPoint).magnitude > (point2 - incomingPoint).magnitude)
+                    {
+                        return point1;
+                    }
+                    else
+                    {
+                        return point2;
+                    }
+                }
+            }
+            else
+            {
+                return point1;
+            }
         }
         else
         {
-            return CalculatePointFromZ(incomingPoint, incomingDirection, Convert.ToSingle( z1));
-        }
+            if ((point2 - incomingPoint).normalized == incomingDirection)
+            {
+                return point2;
+            }
+            else
+            {
+                throw new ArgumentException("Neither of the calculated intersection points satisfy the direction of propagation.");
+            }
+        }      
     }
 
     private Vector3 CalculateRefractionDirection(Vector3 incomingDirection, Vector3 interceptionPoint, float zp, float totalCoef)
@@ -147,26 +197,38 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
         var sin = Math.Abs(Vector3.Cross(normal, incomingDirection).magnitude);
         
         var newSin = sin / totalCoef;
+        ;
+        if (newSin > 1)
+        {
+            throw new ArgumentOutOfRangeException("The beam propagating through the lens is experiencing total internal reflection;");
+        }
 
         var tangent = (incomingDirection - Vector3.Project(incomingDirection, normal)).normalized;
 
-        var result = (tangent * Convert.ToSingle(newSin) + normal * Convert.ToSingle(Math.Sqrt(1 - newSin * newSin))).normalized;
+        var a = tangent * Convert.ToSingle(newSin);
+        var b = normal * Convert.ToSingle(Math.Sqrt(1 - newSin * newSin));
 
-        if (result.magnitude != 1)
-        {
-            throw new Exception("The new Vector is not normalized. Magnitude is :"  + result.magnitude + " .");
-        }
+        var result = (tangent * Convert.ToSingle(newSin) + normal * Convert.ToSingle(Math.Sqrt(1 - newSin * newSin))).normalized;
+        ;
+        
 
         return result;
 
 
     }
 
-    private Vector3 CalculatePointFromZ(Vector3 incomingPoint, Vector3 incomingDirection, float z)
+    private Vector3 CalculatePointFromT(Vector3 incomingPoint, Vector3 incomingDirection, float t)
     {
-        var zTerm = (z - incomingPoint.z) / incomingDirection.z;
-        return new Vector3(zTerm*incomingDirection.x + incomingPoint.x, zTerm * incomingDirection.y + incomingPoint.y, z);
+        return new Vector3(t*incomingDirection.x + incomingPoint.x, t * incomingDirection.y + incomingPoint.y, t*incomingDirection.z + incomingPoint.z);
     }
 
+    private Vector3 ReverseScalingOnInverse(Vector3 position, Vector3 scale)
+    {
+        return new Vector3(position.x*scale.x, position.y * scale.y, position.z * scale.z);
+    }
 
+    private Vector3 TransformPoint(Vector3 position, Vector3 scale)
+    {
+        return LensObject.transform.TransformPoint(new Vector3(position.x / scale.x, position.y / scale.y, position.z / scale.z));
+    }
 }

@@ -14,6 +14,7 @@ public class DiscreteBeam
     private List<GameObject> _ObjectsOfInteraction {get; set; } 
     private List<Vector3> _movementCoordinates { get; set; }
     public Vector3 LastCoordinate { get => _movementCoordinates[_movementCoordinates.Count - 1]; }
+    public bool Visualises { get => _beamLine != null; }
     public Vector3 DirectionOfPropagation 
     {
         get
@@ -68,6 +69,7 @@ public class DiscreteBeam
         };
 
         _beamLine = MonoBehaviour.Instantiate(prefabLine, _Laser.transform.Find("ProjectorGlass").transform, false);
+        _beamLine.layer = 8;
 
         _beamLine.transform.localPosition = initialLocalCoordinates;
 
@@ -129,10 +131,13 @@ public class DiscreteBeam
             ray.origin = _movementCoordinates[_movementCoordinates.Count-1];
             ray.direction = DirectionOfPropagation;
             ;
+            
+            int layerMask =~ (1<<8);
 
-            if (Physics.Raycast(ray, out hit))
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity ,layerMask))
             {
                 ;
+                var a = hit.collider.gameObject.layer;
                 InteractwithObject(hit);
             }
             else
@@ -172,7 +177,11 @@ public class DiscreteBeam
 
         if((result[0].Item1[0]- _movementCoordinates[_movementCoordinates.Count-1]).normalized != DirectionOfPropagation)
         {
-            throw new Exception("Interaction does not return the right first intesection point");
+            throw new Exception("Interaction does not return the right first intesection point. It returns the direction:"
+                +(result[0].Item1[0] - _movementCoordinates[_movementCoordinates.Count - 1]).normalized.ToString()
+                +".Actual direction is:"
+                + DirectionOfPropagation.ToString()
+                );
         }
 
 
@@ -207,11 +216,13 @@ public class DiscreteBeam
         {
             return;
         }
-        LineRenderer beamLineRenderer = _beamLine.GetComponent<LineRenderer>();
-        beamLineRenderer.positionCount++;
-        var count = beamLineRenderer.positionCount;
-        beamLineRenderer.SetPosition(count - 1, beamLineRenderer.GetPosition(count-2) + _beamLine.transform.InverseTransformDirection(DirectionOfPropagation) *maxLengthOfPropagation);
-
+        if (_beamLine != null)
+        {
+            LineRenderer beamLineRenderer = _beamLine.GetComponent<LineRenderer>();
+            beamLineRenderer.positionCount++;
+            var count = beamLineRenderer.positionCount;
+            beamLineRenderer.SetPosition(count - 1, beamLineRenderer.GetPosition(count - 2) + _beamLine.transform.InverseTransformDirection(DirectionOfPropagation) * maxLengthOfPropagation);
+        }
         _movementCoordinates.Add(_movementCoordinates[_movementCoordinates.Count - 1] + DirectionOfPropagation * maxLengthOfPropagation);
     }
     /*
