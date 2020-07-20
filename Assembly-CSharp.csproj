@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{86AB8955-98B0-D33A-456B-DDB3BF34CC22}</ProjectGuid>
+    <ProjectGuid>{989F89F4-3DFF-67A9-2519-5ED6DBA48A61}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -64,11 +64,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\BeamGeneratorScript.cs" />
-    <Compile Include="Assets\DiscreteBeam.cs" />
-    <Compile Include="Assets\DiscreteBeams.cs" />
+    <Compile Include="Assets\DiscreteBeam1.cs" />
     <Compile Include="Assets\InteractionScriptIntI.cs" />
     <Compile Include="Assets\LensInteractionScript.cs" />
+    <Compile Include="Assets\MeasurementControl.cs" />
+    <Compile Include="Assets\MeasurementLine.cs" />
     <Compile Include="Assets\MirrorInteractionScript.cs" />
+    <Compile Include="Assets\PropagationSystem.cs" />
     <Compile Include="Assets\RayStage.cs" />
     <Compile Include="Assets\TypeHolder.cs" />
     <Reference Include="UnityEngine">
@@ -253,6 +255,15 @@
     </Reference>
     <Reference Include="UnityEditor">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/Managed/UnityEditor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst.Unsafe">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/PackageCache/com.unity.burst@1.3.0-preview.12/Unity.Burst.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/PackageCache/com.unity.collections@0.9.0-preview.6/System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/PackageCache/com.unity.nuget.newtonsoft-json@2.0.0-preview/Runtime/Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/NetStandard/ref/2.0.0/netstandard.dll</HintPath>
@@ -600,31 +611,46 @@
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/NetStandard/compat/2.0.0/shims/netfx/System.Xml.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline.Editor">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VSCode.Editor">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
     </Reference>
     <Reference Include="Unity.CollabProxy.Editor">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Rider.Editor">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.UI">
-      <HintPath>D:/programki/Unity/Update/Start - Copy/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Mathematics.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Mathematics.Editor">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Mathematics.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Burst.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst.Editor">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Burst.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Collections.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup></ItemGroup>
