@@ -63,16 +63,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\BeamGeneratorScript.cs" />
-    <Compile Include="Assets\DiscreteBeam1.cs" />
-    <Compile Include="Assets\InteractionScriptIntI.cs" />
-    <Compile Include="Assets\LensInteractionScript.cs" />
+    <Compile Include="Assets\BACKEND\BeamGenerator\Script\BeamGeneratorScript.cs" />
+    <Compile Include="Assets\BACKEND\DiscreteBeam\Script\DiscreteBeam1.cs" />
+    <Compile Include="Assets\BACKEND\InteractionScriptsInterfaces\InteractionScriptIntI.cs" />
+    <Compile Include="Assets\BACKEND\InteractionScriptsInterfaces\MultiBeamInteractionI.cs" />
+    <Compile Include="Assets\BACKEND\Lens\Scripts\LensInteractionScript.cs" />
+    <Compile Include="Assets\BACKEND\Mirror\Scripts\MirrorInteractionScript.cs" />
+    <Compile Include="Assets\BACKEND\PropagationSystem\PropagationSystem.cs" />
+    <Compile Include="Assets\BACKEND\TestScripts\MultiBeamInteraction.cs" />
     <Compile Include="Assets\MeasurementControl.cs" />
     <Compile Include="Assets\MeasurementLine.cs" />
-    <Compile Include="Assets\MirrorInteractionScript.cs" />
-    <Compile Include="Assets\PropagationSystem.cs" />
-    <Compile Include="Assets\RayStage.cs" />
-    <Compile Include="Assets\TypeHolder.cs" />
+    <None Include="Assets\BACKEND\BackEnd_README.txt" />
+    <None Include="Assets\MASTER\Master_README.txt" />
+    <None Include="Assets\FRONTEND\FrontEnd_README.txt" />
     <Reference Include="UnityEngine">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
@@ -613,8 +616,17 @@
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.Burst">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Burst.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.VSCode.Editor">
       <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Burst.Editor">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Burst.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Collections.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
       <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
@@ -631,26 +643,17 @@
     <Reference Include="Unity.Rider.Editor">
       <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEditor.UI">
-      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.Mathematics">
       <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Mathematics.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Mathematics.Editor">
       <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Mathematics.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Burst">
-      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Burst.dll</HintPath>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Burst.Editor">
-      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Burst.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Collections">
-      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/Unity.Collections.dll</HintPath>
+    <Reference Include="UnityEditor.UI">
+      <HintPath>D:/programki/Unity/New folder/DLH-Optics-Pilot-2020/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup></ItemGroup>
