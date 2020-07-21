@@ -25,7 +25,7 @@ public class MeasurementControl : MonoBehaviour
 
 {
     public Camera cam;
-    public LineRenderer line;
+    LineRenderer line;
     public GameObject markerPrefab;
 
 
@@ -35,7 +35,7 @@ public class MeasurementControl : MonoBehaviour
     int clicks; //Used for line creation control flow
 
     [SerializeField] [Range(1,8)] int digits; //number of digits stored for position data - affects snapping intensity
-    [SerializeField] [Range(0, 10)] int currentLayer;
+    [SerializeField] [Range(1, 10)] int currentLayer;
 
     Vector3 startPoint; //Local variables of line under construction, before they are written to lineData 
     Vector3 endPoint;    
@@ -202,7 +202,8 @@ public class MeasurementControl : MonoBehaviour
         line.numCornerVertices = 10;
         line.material.color = Color.red;
         line.receiveShadows = false;
-        line.shadowBias = 0f;
+        line.shadowBias = 100f;
+        Debug.Log(line.endWidth);
     }
 
     public void OnLayerChange(int newLayer)
