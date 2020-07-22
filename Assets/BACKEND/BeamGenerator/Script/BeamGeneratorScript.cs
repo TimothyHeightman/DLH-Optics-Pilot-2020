@@ -9,7 +9,7 @@ using UnityEngine;
 public class BeamGeneratorScript : MonoBehaviour
 {
     private List<DiscreteBeam> _descreteBeams = new List<DiscreteBeam>();
-    private int resolution = 0; //for testing purposes set it to 0 (any val from 0 to 100 normally)
+    private int resolution = 100;
 
     public GameObject laser;
     public double intensity;
@@ -28,7 +28,7 @@ public class BeamGeneratorScript : MonoBehaviour
 
     private void DescreateBeamCreator()
     {
-        var radius = laser.transform.Find("LaserGlass").transform.localScale.x / 4;
+        var radius = laser.transform.Find("BeamOrientationController").transform.localScale.x * 10;
         float delta = Convert.ToSingle(radius / (resolution + 0.5));
 
         var positions = new List<Vector3>();
@@ -43,7 +43,7 @@ public class BeamGeneratorScript : MonoBehaviour
             {
                 if ((i * i + j * j) * delta * delta < radius * radius)
                 {
-                    positions.Add(new Vector3(delta * i, delta * j, 0));
+                    positions.Add(new Vector3(delta * i, 0, delta * j));
                     if (i*i == resolution*resolution | j*j == resolution * resolution)
                     {
                         endingPositions.Add(true);
@@ -67,7 +67,8 @@ public class BeamGeneratorScript : MonoBehaviour
 
         for (int i = 0; i < positions.Count; i++)
         {
-            _descreteBeams.Add(new DiscreteBeam(Id, ParentType.Laser , laser.transform.Find("BeamOrientationController").transform.TransformPoint( positions[i]), laser.transform.Find("BeamOrientationController").transform.TransformDirection(Vector3.forward), endingPositions[i], intensity, 10, 0));
+            ;
+            _descreteBeams.Add(new DiscreteBeam(Id, ParentType.Laser , laser.transform.Find("BeamOrientationController").transform.TransformPoint( positions[i]), laser.transform.Find("BeamOrientationController").transform.TransformDirection(-Vector3.up), endingPositions[i], intensity, 10, 0));
         }
     }
 
@@ -79,7 +80,7 @@ public class BeamGeneratorScript : MonoBehaviour
 
     private void DeleteAllDiscreteBeams()
     {
-        foreach( Transform child in laser.transform.Find("LaserGlass").transform)
+        foreach( Transform child in laser.transform.Find("ProjectorGlass").transform)
         {
             Destroy(child.gameObject);
         }

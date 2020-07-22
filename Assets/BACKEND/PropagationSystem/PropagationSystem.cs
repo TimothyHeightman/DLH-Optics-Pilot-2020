@@ -12,28 +12,56 @@ public class PropagationSystem : MonoBehaviour
     private List<DiscreteBeam> _discreteBeams = new List<DiscreteBeam>();
     private List<GameObject> _lasers = new List<GameObject>();
     private float maxLengthOfPropagation = 100;
+    private int __numberOfBeamsInPropagation = 0;
 
     private List<GameObject> _lines = new List<GameObject>();
     private Dictionary<Guid, GameObject> _lineRenderersConnections = new Dictionary<Guid, GameObject>();
     
 
     private float _delta = 0.00000001f;
-    private int _numberOfBeamsInPropagation = 0;
+    private int _NumberOfBeamsInPropagation { 
+        get { return __numberOfBeamsInPropagation; } 
+        set { 
+            if (value > _discreteBeams.Count) 
+            {
+                throw new ArgumentOutOfRangeException("The propagation beams are more than the actual. They are given to be : " + value + "Actual size is : " + _discreteBeams.Count);
+            }
+            __numberOfBeamsInPropagation = value;
+        } 
+    }
+
     private List<GameObject> _keysForClear = new List<GameObject>();
-    private  Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>> _separateObjectInteractions = new Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>>();
+    private Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>> _separateObjectInteractions = new Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>>();
+    private Dictionary<int, Tuple<List<float3>, List<float3>>> _collisionPositionsPerBeam = new Dictionary<int, Tuple<List<float3>, List<float3>>>();
+    private Dictionary<GameObject, Tuple<Vector3, Quaternion>> _ObjectOfInteractionPrevPosition = new Dictionary<GameObject, Tuple<Vector3, Quaternion>>();
+    private bool _remodelling = false;
 
     [SerializeField]
     public GameObject prefabLine;
 
     private void Update()
     {
-        if (_numberOfBeamsInPropagation == 0)
+        if (_NumberOfBeamsInPropagation == 0 | _remodelling)
         {
-            if (_separateObjectInteractions.Count != 0)
+            int beamPropagationSectionInteger;
+            int discreteBeaminteger;
+
+            _remodelling = false;
+            ;
+            if (CheckForSceneUpdates(out discreteBeaminteger, out beamPropagationSectionInteger))
             {
-                SendMultiBeams();
+                ;
+                CutBeams(discreteBeaminteger, beamPropagationSectionInteger);
             }
-            return;
+            else
+            {
+                if (_separateObjectInteractions.Count != 0)
+                {
+                    SendMultiBeams();
+                }
+                return;
+            }
+            
         }
 
         var descreteBeamsTointeractIndeces = new List<int>();
@@ -62,6 +90,22 @@ public class PropagationSystem : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
             {
+
+                if (_ObjectOfInteractionPrevPosition.ContainsKey(hit.collider.gameObject))
+                {
+                    if(hit.collider.gameObject.transform.position != _ObjectOfInteractionPrevPosition[hit.collider.gameObject].Item1 |
+                        hit.collider.gameObject.transform.rotation != _ObjectOfInteractionPrevPosition[hit.collider.gameObject].Item2)
+                    {
+                        _remodelling = true;
+                    }
+                }
+                else
+                {
+                    _ObjectOfInteractionPrevPosition.Add(hit.collider.gameObject, new Tuple<Vector3, Quaternion>(hit.collider.gameObject.transform.position, hit.collider.gameObject.transform.rotation));
+                }
+
+                _collisionPositionsPerBeam[descreteBeamsTointeractIndeces[i]].Item2.Add(hit.point);
+
                 if (_separateObjectInteractions.ContainsKey(hit.collider.gameObject))
                 {
                     _separateObjectInteractions[hit.collider.gameObject].Item1.Add(descreteBeamsTointeractIndeces[i]);
@@ -77,7 +121,7 @@ public class PropagationSystem : MonoBehaviour
             }
             else
             {
-                _numberOfBeamsInPropagation--;
+                _NumberOfBeamsInPropagation--;
                 limitedBeamDirection.Add(_discreteBeams[descreteBeamsTointeractIndeces[i]].DirectionOfPropagation);
                 limitedBeamPosition.Add(_discreteBeams[descreteBeamsTointeractIndeces[i]].LastCoordinate);
                 limitedBeamFinalPosition.Add(float3.zero);
@@ -125,7 +169,7 @@ public class PropagationSystem : MonoBehaviour
             {
                 for (int i = 0; i < _separateObjectInteractions[el].Item1.Count; i++)
                 {
-                    _numberOfBeamsInPropagation--;
+                    _NumberOfBeamsInPropagation--;
                     limitedBeamFinalPositionList.Add(_separateObjectInteractions[el].Item2[i].point);
                     limitedBeamIndecesList.Add(_separateObjectInteractions[el].Item1[i]);
                 }
@@ -156,11 +200,14 @@ public class PropagationSystem : MonoBehaviour
 
     public void AddNewBeams(List<DiscreteBeam> discreteBeams)
     {
-        _numberOfBeamsInPropagation += discreteBeams.Count;
+        var counter = 0;
         foreach (var el in discreteBeams)
         {
             _discreteBeams.Add(el);
+            _collisionPositionsPerBeam.Add(counter, new Tuple<List<float3>, List<float3>>(new List<float3> { el.LastCoordinate},new List<float3>()));
+            counter++;
         }
+        _NumberOfBeamsInPropagation += discreteBeams.Count;
     }
 
     public void AddLaser(GameObject laser)
@@ -181,14 +228,18 @@ public class PropagationSystem : MonoBehaviour
             throw new ArgumentException("The returned point of intersection does not belong on the line of propagation.");
         }
 
+        _collisionPositionsPerBeam[beamindex].Item1.Add(movementPoint1);
         beam.movementCoordinates.Add(movementPoint1);
+
         if (!ChechFloat3IsZero(movementPoint2))
         {
             beam.movementCoordinates.Add(movementPoint2);
+            _collisionPositionsPerBeam[beamindex].Item1[_collisionPositionsPerBeam[beamindex].Item1.Count-1]= movementPoint2;
         }
         if (!ChechFloat3IsZero(movementPoint3))
         {
             beam.movementCoordinates.Add(movementPoint3);
+            _collisionPositionsPerBeam[beamindex].Item1[_collisionPositionsPerBeam[beamindex].Item1.Count - 1] = movementPoint3;
         }
 
         beam.DirectionOfPropagation = direction;
@@ -206,6 +257,7 @@ public class PropagationSystem : MonoBehaviour
         for (int i = 0; i < beamindeces.Count; i++)
         {
             _discreteBeams[beamindeces[i]].movementCoordinates.Add(positions[i]);
+            _collisionPositionsPerBeam[beamindeces[i]].Item2.Add(positions[i]);
             var buf = _discreteBeams[beamindeces[i]];
             ;
             buf.DirectionOfPropagation = float3.zero;
@@ -221,6 +273,66 @@ public class PropagationSystem : MonoBehaviour
     private bool ChechTwofloat3sEqual(float3 a, float3 b)
     {
         return (a.x - b.x) * (a.x - b.x) < _delta & (a.y - b.y) * (a.y - b.y) < _delta & (a.z - b.z) * (a.z - b.z) < _delta;
+    }
+
+    private bool CheckForSceneUpdates(out int discreteBeamInteger, out int beamPropagationSectionInteger)
+    {
+        var hit = new RaycastHit();
+        Ray ray = new Ray();
+        int layerMask = ~(1 << 8);
+
+        foreach (var el in _collisionPositionsPerBeam.Keys)
+        {
+            if (_discreteBeams[el].Visualizes)
+            {
+                for (int i = 0; i < _collisionPositionsPerBeam[el].Item1.Count; i++)
+                {
+                    ray.origin = _collisionPositionsPerBeam[el].Item1[i];
+                    ray.direction = _collisionPositionsPerBeam[el].Item2[i] - _collisionPositionsPerBeam[el].Item1[i];
+                    if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
+                    {
+                        if (!_ObjectOfInteractionPrevPosition.ContainsKey(hit.collider.gameObject))
+                        {
+                            beamPropagationSectionInteger = i;
+                            discreteBeamInteger = el;
+
+                            _ObjectOfInteractionPrevPosition.Add(hit.collider.gameObject, new Tuple<Vector3, Quaternion>(hit.collider.gameObject.transform.position, hit.collider.gameObject.transform.rotation));
+
+                            return true;
+                        }
+                        if (hit.collider.gameObject.transform.position != _ObjectOfInteractionPrevPosition[hit.collider.gameObject].Item1 |
+                            hit.collider.gameObject.transform.rotation != _ObjectOfInteractionPrevPosition[hit.collider.gameObject].Item2)
+                        {
+                            beamPropagationSectionInteger = i;
+                            discreteBeamInteger = el;
+
+                            _ObjectOfInteractionPrevPosition[hit.collider.gameObject] = new Tuple<Vector3, Quaternion>(hit.collider.gameObject.transform.position, hit.collider.gameObject.transform.rotation);
+
+                            return true;
+                        }
+                        if (!ChechTwofloat3sEqual(_collisionPositionsPerBeam[el].Item2[i], Vector3ToFloat3(hit.point)))
+                        {
+                            beamPropagationSectionInteger = i;
+                            discreteBeamInteger = el;
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        if(Magniitude(_collisionPositionsPerBeam[el].Item2[i] - _collisionPositionsPerBeam[el].Item1[i]) != maxLengthOfPropagation)
+                        {
+                            beamPropagationSectionInteger = i;
+                            discreteBeamInteger = el;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        beamPropagationSectionInteger = 0;
+        discreteBeamInteger = 0;
+        return false;
     }
 
     private void ClearInteractionObjectKeys()
@@ -255,6 +367,11 @@ public class PropagationSystem : MonoBehaviour
         }
 
         return laser.transform;
+    }
+
+    private float Magniitude(float3 float3)
+    {
+        return Convert.ToSingle(Math.Sqrt(float3.x * float3.x + float3.y * float3.y + float3.z * float3.z));
     }
 
     private void SendMultiBeams()
@@ -314,6 +431,94 @@ public class PropagationSystem : MonoBehaviour
             {
                 lineRenderer.SetPosition(i, discreteBeam.movementCoordinates[i]);
             }
+        }
+    }
+
+    private void CutBeams(int firstBeamInteger, int beamPropagationSectionInteger)
+    {
+        Guid parentId = _discreteBeams[firstBeamInteger].ParentId;
+
+        var hit = new RaycastHit();
+        Ray ray = new Ray();
+        int layerMask = ~(1 << 8);
+
+        var indecesToClear = new List<int>();
+        ;
+        for (int i = 0; i < _discreteBeams.Count; i++)
+        {
+            if(_discreteBeams[i].ParentId == parentId)
+            {
+                ray.origin = _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger];
+                ray.direction = _collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger] - _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger];
+                if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
+                {
+                    if (!ChechTwofloat3sEqual(_collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger], Vector3ToFloat3(hit.point)))
+                    {
+                        if (ChechFloat3IsZero(_discreteBeams[i].DirectionOfPropagation))
+                        {
+                            _NumberOfBeamsInPropagation++;
+                        }
+                        _collisionPositionsPerBeam[i].Item1.RemoveRange(beamPropagationSectionInteger+1, _collisionPositionsPerBeam[i].Item1.Count - 1 - beamPropagationSectionInteger);
+                        _collisionPositionsPerBeam[i].Item2.RemoveRange(beamPropagationSectionInteger, _collisionPositionsPerBeam[i].Item2.Count - beamPropagationSectionInteger);
+                        CutBeam(i, _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]);
+                        indecesToClear.Add(i);
+                    }
+                }
+                else
+                {
+                    if(Magniitude(_collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger] - _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger])!=maxLengthOfPropagation)
+                    {
+                        if (ChechFloat3IsZero(_discreteBeams[i].DirectionOfPropagation))
+                        {
+                            _NumberOfBeamsInPropagation++;
+                        }
+                        ;
+                        _collisionPositionsPerBeam[i].Item1.RemoveRange(beamPropagationSectionInteger+1, _collisionPositionsPerBeam[i].Item1.Count - 1 - beamPropagationSectionInteger);
+                        _collisionPositionsPerBeam[i].Item2.RemoveRange(beamPropagationSectionInteger, _collisionPositionsPerBeam[i].Item2.Count - beamPropagationSectionInteger);
+                        CutBeam(i, _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]);
+                        indecesToClear.Add(i);
+                    }
+                }
+            }
+        }
+
+        foreach(var el in _separateObjectInteractions.Keys)
+        {
+            MultiBeamInteractionI multiBeamInteraction;
+            if (el.TryGetComponent<MultiBeamInteractionI>(out multiBeamInteraction))
+            {
+                foreach(var indexToClear in indecesToClear)
+                {
+                    var index = _separateObjectInteractions[el].Item1.IndexOf(indexToClear);
+                    if (index != -1)
+                    {
+                        _separateObjectInteractions[el].Item1.RemoveAt(index);
+                        _separateObjectInteractions[el].Item2.RemoveAt(index);
+                    }
+                }
+                
+            }
+                
+        }
+
+    }
+
+    private void CutBeam(int beamIndex, float3 cutOffPosition)
+    {
+        bool exceptionChecker = true;
+        for(int i = 0; i < _discreteBeams[beamIndex].movementCoordinates.Count; i++)
+        {
+            if(ChechTwofloat3sEqual(cutOffPosition, _discreteBeams[beamIndex].movementCoordinates[i]))
+            {
+                ;
+                 _discreteBeams[beamIndex] = _discreteBeams[beamIndex].CutBeam(i);
+                exceptionChecker = false;
+                break;
+            }
+        }
+        if (exceptionChecker)
+        {
+            throw new Exception("The point for cutoff was not found. The position is : "+ cutOffPosition.ToString());
         }
     }
 
