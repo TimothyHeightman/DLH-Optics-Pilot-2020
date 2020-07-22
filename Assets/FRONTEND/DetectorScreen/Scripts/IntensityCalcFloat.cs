@@ -4,19 +4,20 @@ using UnityEngine;
 public class IntensityCalcFloat : MonoBehaviour
 {
     public DetectorBehaviour detector;
+    [SerializeField] string file = "Assets/FRONTEND/DetectorScreen/img.txt";
 
     //grating parameters (for no grating)
-    public float gratingDim = 0.00006f;//assuming a square grating 
+    public float maxSlitDim = 0.006f;//assuming a square grating 
 
     //slit parameters (so far only single slit)
-    public float slitWidth = 0.000006f;
-    public float slitHeight = 0.00006f;
+    public float slitWidth = 0.00006f;
+    public float slitHeight = 0.005f;
 
     //slit location with respect to centre of grating (not currently used)
     //public float slitWOffset;
     //public float slitHOffset;
 
-    public int resolution = 100;
+    public int resolution = 1000;
 
     private int[,] bitmap;
     private float[,] output;//matrix with 2DFFT
@@ -36,7 +37,7 @@ public class IntensityCalcFloat : MonoBehaviour
         FFT bitMapFFT = new FFT(bitmap);
         bitMapFFT.ForwardFFT();
         output = bitMapFFT.FFTLog;
-        //print(output);
+        print(output);
         detector.DisplayInterferencePattern(output);
     }
 
@@ -50,10 +51,20 @@ public class IntensityCalcFloat : MonoBehaviour
     private void fill()
     {
         float beginSlitWidth, endSlitWidth, beginSlitHeight, endSlitHeight;
-        beginSlitWidth = ((gratingDim - slitWidth) / 2) * (resolution / gratingDim) - 1;
-        endSlitWidth = beginSlitWidth + (slitWidth * (resolution / gratingDim)) + 1;
-        beginSlitHeight = ((gratingDim - slitHeight) / 2) * (resolution / gratingDim) - 1;
-        endSlitHeight = beginSlitHeight + (slitHeight * (resolution / gratingDim)) + 1;
+        beginSlitWidth = ((maxSlitDim - slitWidth) / 2) * (resolution / maxSlitDim) - 1;
+        endSlitWidth = beginSlitWidth + (slitWidth * (resolution / maxSlitDim)) + 1;
+        beginSlitHeight = ((maxSlitDim - slitHeight) / 2) * (resolution / maxSlitDim) - 1;
+        endSlitHeight = beginSlitHeight + (slitHeight * (resolution / maxSlitDim)) + 1;
+
+        Debug.Log((int)beginSlitWidth);
+
+        Debug.Log((int)endSlitWidth);
+
+        Debug.Log((int)beginSlitHeight);
+
+        Debug.Log((int)endSlitHeight);
+
+
 
         for (int i = (int)beginSlitHeight; i < (int)endSlitHeight; i++)
         {
@@ -66,21 +77,25 @@ public class IntensityCalcFloat : MonoBehaviour
 
     //text outputs
 
-    private void print(float[,] output) {
-        using (TextWriter tw = new StreamWriter("img.txt")) {
-            for (int i = 0; i < output.GetLength(0); i++) {
-                for (int j = 0; j < output.GetLength(1); j++) {
-                    tw.Write(output[i, j].ToString() + "\t");
-                    Debug.Log(output[i, j]);
-                    //tw.Write(output[i, j].ToString("#.000") + "\t");
+    private void print(float[,] output)
+    {
+        using (TextWriter tw = new StreamWriter(file))
+        {
+            for (int i = 0; i < output.GetLength(0); i++)
+            {
+                for (int j = 0; j < output.GetLength(1); j++)
+                {
+                    //tw.Write(output[i, j].ToString() + "\t");
+                    tw.Write(output[i, j].ToString("#.000") + "\t");
                 }
                 tw.WriteLine();
             }
         }
+        Debug.Log("File saved: " + file);
     }
 
     //private void print(double[,] output) {
-    //    using (TextWriter tw = new StreamWriter("img.txt")) {
+    //    using (TextWriter tw = new StreamWriter("file")) {
     //        for(int i = 0; i < output.GetLength(0); i++) {
     //            for(int j = 0; j < output.GetLength(1); j++) {
     //                tw.Write(output[i, j].ToString("#.000") + "\t");
@@ -91,7 +106,7 @@ public class IntensityCalcFloat : MonoBehaviour
     //}
 
     //private void print(int[,] output) {
-    //    using (TextWriter tw = new StreamWriter("img.txt")) {
+    //    using (TextWriter tw = new StreamWriter("file")) {
     //        for (int i = 0; i < output.GetLength(0); i++) {
     //            for (int j = 0; j < output.GetLength(1); j++) {
     //                tw.Write(output[i, j] + "\t");

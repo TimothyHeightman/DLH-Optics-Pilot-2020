@@ -57,14 +57,24 @@ public class IntensityCalcCopy : MonoBehaviour
 
     //creates high res bitmap for grating and slit 
     private void fill() {
-        int beginSlitWidth = 0, endSlitWidth = 0, beginSlitHeight = 0, endSlitHeight = 0;
+        float beginSlitWidth, endSlitWidth, beginSlitHeight, endSlitHeight;
         beginSlitWidth = ((gratingDim - slitWidth) / 2) * (resolution / gratingDim) - 1;
         endSlitWidth = beginSlitWidth + (slitWidth * (resolution / gratingDim)) + 1;
+
         beginSlitHeight = ((gratingDim - slitHeight) / 2) * (resolution / gratingDim) - 1;
         endSlitHeight = beginSlitHeight + (slitHeight * (resolution / gratingDim)) + 1;
 
-        for (int i = beginSlitHeight; i < endSlitHeight; i++) {
-            for(int j = beginSlitWidth; j < endSlitWidth; j++) {
+        Debug.Log(beginSlitWidth);
+
+        Debug.Log(endSlitWidth);
+
+        Debug.Log(beginSlitHeight);
+
+        Debug.Log(endSlitHeight);
+
+
+        for (int i = (int)beginSlitHeight; i < endSlitHeight; i++) {
+            for(int j = (int)beginSlitWidth; j < endSlitWidth; j++) {
                 bitmap[i, j] = 1;
             }
         }
