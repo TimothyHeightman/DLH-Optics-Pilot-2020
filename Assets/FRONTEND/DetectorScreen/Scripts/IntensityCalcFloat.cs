@@ -17,7 +17,8 @@ public class IntensityCalcFloat : MonoBehaviour
     //public float slitWOffset;
     //public float slitHOffset;
 
-    public int resolution = 1000;
+    public int resolution;
+    [Range(0, 13)] public int resolutionPower;
 
     private int[,] bitmap;
     private float[,] output;//matrix with 2DFFT
@@ -25,6 +26,7 @@ public class IntensityCalcFloat : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        resolution = Mathf.RoundToInt(Mathf.Pow(2, resolutionPower));  //QUICK FIX: Only currently works if resolution is a power of 2, due to fft algorithm
         bitmap = new int[resolution, resolution];
         //buildGrating();
         fill();
