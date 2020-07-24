@@ -14,15 +14,21 @@ public class DetectorDisplayScript : MonoBehaviour
 {
     public Image IMG;
     public GameObject emailManager;
+
     [SerializeField] float screenDistance;
     float screenHeight;
     float screenWidth;
-
-    int WIDTH;
-    int HEIGHT;
+    int resolution; // size of the square matrix
     Texture2D screenTexture;
+    float[,] inputMatrix;
     float[,] rgbMatrix;
-    float[,] convertedMatrix;
+
+
+    // public accessors - used by the measurement controller
+    public float ScreenHeight { get { return screenHeight; } }
+    public float ScreenWidth { get { return screenWidth; } }
+    public float Resolution { get { return resolution; } }
+    public float[,] Matrix { get { return inputMatrix; } }
 
 
     private void Start()
@@ -34,30 +40,18 @@ public class DetectorDisplayScript : MonoBehaviour
 
     public void Fill(float[,] InputMatrix)
     {
-        // 1. Take inputMatrix and decode parameters (WIDTH/HEIGHT)
-        WIDTH = InputMatrix.GetLength(0);
-        HEIGHT = InputMatrix.GetLength(1);
+        // 1. make local copy of input matrix
+        inputMatrix = InputMatrix;
+
+        // 1. Take inputMatrix and decode parameters (resolution)
+        resolution = inputMatrix.GetLength(0);
 
         // 2. Convert the inputMatrix to RGB
         // currently not needed
-        //rgbMatrix = ConvertToRGB(InputMatrix);
-
-
-        // Convert from kx-space to x-space
-        convertedMatrix = ConvertToXSpace(InputMatrix);
+        //rgbMatrix = ConvertToRGB(inputMatrix);
 
         // 3. Display the rgbMatrix to the screen
-        Display(InputMatrix);
-    }
-
-    private float[,] ConvertToXSpace(float[,] inputMatrix)
-    {
-        float[,] converted;
-
-        converted = inputMatrix;
-        // need to convert the inputMatrix from x-space to k-space and renormalise.
-
-        return converted;
+        Display(inputMatrix);
     }
 
     private float[,] ConvertToRGB(float[,] inputMatrix)
@@ -68,11 +62,11 @@ public class DetectorDisplayScript : MonoBehaviour
 
     private void Display(float[,] InputMatrix)
     {
-        screenTexture = new Texture2D(WIDTH, HEIGHT, TextureFormat.ARGB32, false);
+        screenTexture = new Texture2D(resolution, resolution, TextureFormat.ARGB32, false);
 
-        for (int i = 0; i < WIDTH; i++)
+        for (int i = 0; i < resolution; i++)
         {
-            for (int j = 0; j < HEIGHT; j++)
+            for (int j = 0; j < resolution; j++)
             {
                 Color pixelColor = new Color(255f, 0f, 0f, InputMatrix[i, j]);
                 screenTexture.SetPixel(i, j, pixelColor);
@@ -81,7 +75,7 @@ public class DetectorDisplayScript : MonoBehaviour
 
         screenTexture.Apply();
 
-        IMG.GetComponent<Image>().sprite = Sprite.Create(screenTexture, new Rect(0, 0, WIDTH, HEIGHT), new Vector2(0.5f, 0.5f));
+        IMG.GetComponent<Image>().sprite = Sprite.Create(screenTexture, new Rect(0, 0, resolution, resolution), new Vector2(0.5f, 0.5f));
         Debug.Log("Matrix Display Complete");
 
         emailManager.SetActive(true);
