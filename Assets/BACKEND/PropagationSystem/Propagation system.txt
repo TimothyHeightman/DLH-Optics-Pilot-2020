@@ -1,0 +1,59 @@
+variables:
+maxLengthOfPropagation the maximum length of beam propagation when there is no interaction.
+
+_NumberOfBeamsInPropagation checks if the varible is taking allowed values
+
+_lines holds the linerenderers
+
+_lineRenderersConnections connects the linerenderes with their appropriate beam
+
+_separateObjectInteractions stores the collisions per object for rach index in beams and their appropriate collision params
+
+_keysForClear holds how many of the objects from _separateObjectInteractions should be cleared from the variable
+
+_sendToMultiBeamInteractors holds if the bunch of beams per multibeam object has been send to them
+
+_collisionPositionsPerBeam holds all entry and exit positions for all beams when colliding
+
+_ObjectOfInteractionPrevPosition holds position and rotation values for all interacting objects
+
+
+
+
+
+
+Update contains the logic. Ordered by actions:
+
+keeps in check the amount of beams in propagation if zero checks if repropagation is required which need beams to be cut down. _remodeling holds if repropagation is required if not all beams are propagated before a new update is present.
+
+The update propagates all beams once per call. This means chec for collision and propagate through that object if there is one.
+
+Finds all beams that are not finished with propagation and sorts them by object they hit and propagates the one that do not hit anything. Sets the job for the limited ones.
+
+Going by the interaction objects it gives the set beams that interact with them and for multibeams interactions it keeps all of them for future use.
+
+Then after propagations for objects and limited it assigns the values to each beam.
+
+
+
+addnew beams is used when a leser is introduced. Can be used dynamically.
+
+assign values after propagation checks if the interactions are correct and if so assigns them.
+
+
+checkforsceneupdates - checks all the beams that are visualized if their collision properties are kept and the objects that beams have interacted if have moved.
+
+sendmultibeams send the beams that interact with multibeam objects when all the beams in the system have been propagated
+
+project handles the beams that are due for visual representation by updating their linerenderers
+
+
+clearbeamsfrommultibeaminteractions checks if a beam is part of any multibeam interactions and clears it from the interaction
+
+
+cutbeams finds the point at which beam should be cut based on intial information, which is sorted by position and parent type. Might have problems when beams from same source have more interactions than others where all interact with same object
+
+
+cutbeam changes the internal parameters in the discrete beam
+
+

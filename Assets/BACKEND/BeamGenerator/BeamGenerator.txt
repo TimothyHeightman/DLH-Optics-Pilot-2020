@@ -1,0 +1,12 @@
+Variables:
+
+_descreteBeams - the initial sed ot discreteBeams
+
+resolution - represents the amount of beams to be generated. It is the number of beams between the center beam and the side. 0 corresponds to one beam at the middle.
+
+Functions:
+
+Start - Creates and Id for the beam gives it to the propagation system then creates the initial beams and sends them too.
+
+DescreateBeamCreator calculates the positions of all the beams and which are to be visually represented and fill in the variable for the beams.
+

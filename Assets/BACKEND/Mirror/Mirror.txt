@@ -1,0 +1,3 @@
+InteractionWithDiscreteBeam breaks down the input beams and gives it to the job system for mulltithreading.
+
+Job system takes in sigle beam ckekes the normal to the point of collision and calculates the reflection direction and returns it for each beam

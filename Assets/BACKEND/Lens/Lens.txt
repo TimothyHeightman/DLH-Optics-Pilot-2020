@@ -1,0 +1,20 @@
+Varibles:
+radius1 and radius2 are the dadii of the two spheres define the lens. 1 is for the lens at z>0 and 2 for z<0. Z is consideret in local space.
+
+length is the radius of the actial lens.
+
+thinkness is the distance between the two spherical surfaces at the edge of the lens.
+
+delta is used for checking differences between two vetors
+
+functions:
+
+Start check if the given values create a possible lens
+
+Intecation with discretebeam gets the beams and prepares them for multithreaded calculation and assigns the value after calculation.
+
+ParallelLensInteraction calculates the passing through the lens for the beams one at a time.
+
+refracting sigle beams collects the logic. depending on the radii it calculates the collision position at entry an exit also the direction after each.
+
+Other functions are self explanatory by their name.
