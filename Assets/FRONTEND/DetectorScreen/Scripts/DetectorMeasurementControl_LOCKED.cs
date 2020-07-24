@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
+using System.IO;
+
+
+// LOCKED VERSION OF LUKE'S SCRIPT WHICH CONSTRAINS THE LINE TO BE HORIZONTAL OR VERTICAL
 
 /* Script controls the processs of constructing lines, as well as storing and displaying these.
  * Left click on mesh colliders to place the start and end points. 
@@ -20,13 +21,14 @@ using UnityEngine.UI;
  * This provides the basic functionality, excluding control of layers from the UI - do this from the inspector
 */
 
-public class DetectorMeasurementControl : MonoBehaviour
+
+public class DetectorMeasurementControl_LOCKED : MonoBehaviour
 
 {
     public Camera cam;
-    LineRenderer line;
     public GameObject markerPrefab;
-
+    public DetectorDisplayScript display;
+    public Transform screenOrigin;
 
     GameObject markerOne; //Simple objects to mark the start and end of lines under construction
     GameObject markerTwo;
@@ -41,11 +43,19 @@ public class DetectorMeasurementControl : MonoBehaviour
     string startTag;
     string endTag;
 
+    private LineRenderer line;
     List<MeasurementLine> lineData = new List<MeasurementLine>();                   //Data structure holding line data
     public List<GameObject> lineObjects = new List<GameObject>();                  //Current list of lines being shown in the current layer
     Dictionary<string, Vector3> positionCache = new Dictionary<string, Vector3>(); //GameObjects are found by name for their global position and rotations
     Dictionary<string, Quaternion> rotationCache = new Dictionary<string, Quaternion>(); //These caches store them temporarily if they have been previously requested.
 
+    // detector Parameters for the data-taking
+    float screenHeight;
+    float screenWidth;
+    float screenResolution;
+    float[,] matrix;
+    bool horizontal; //true = horizontal measurement, false = vertical measurement
+    [SerializeField] string file = "Assets/FRONTEND/DetectorScreen/img.txt";
 
     private void Start()
     {
@@ -63,14 +73,12 @@ public class DetectorMeasurementControl : MonoBehaviour
         {
             CreateTool();
             SetLineProperties(line);
-            //need to get principle rotation
-            //need to get the origin of the setup
         }
         else
         {            
             EndTool();
         }        
-    }       
+    }
 
     private void Update()
     {
@@ -85,6 +93,7 @@ public class DetectorMeasurementControl : MonoBehaviour
                 switch (clicks)
                 {
                     case 0:
+                        // first marker
                         startPoint = RoundVector(hit.point, digits); //round position of position marker to arbritrary precision
                         markerOne.transform.position = startPoint;
                         line.SetPosition(0, startPoint);
@@ -95,11 +104,38 @@ public class DetectorMeasurementControl : MonoBehaviour
                         if (Input.GetMouseButtonDown(0)) //if left click whilst over mesh collided
                         {
                             clicks += 1;
+                            //Debug.Log("start point: " + startPoint);
                         }
                         break;
 
                     case 1:
+                        // second marker
+                        // for the detector - the second point must be horizontal/vertical relative to the first point
                         endPoint = RoundVector(hit.point, digits);
+
+                        // direction from first point to current mouse position
+                        Vector3 dir = endPoint - startPoint;
+                        // normalised projections along the x/y axes
+                        float x_proj = Vector3.Dot(dir, new Vector3(1, 0));
+                        float y_proj = Vector3.Dot(dir, new Vector3(0, 1));
+
+                        //HORIZONTAL OR VERTICAL LOCKING
+                        if (Mathf.Abs(x_proj) > Mathf.Abs(y_proj))
+                        {
+                            //greater projection along the horizontal axis - so lock horizontally
+                            endPoint.x = x_proj + startPoint.x;
+                            endPoint.y = startPoint.y;
+                            horizontal = true;
+                        }
+                        else
+                        {
+                            //greater projection along the vertical axis - so lock vertically
+                            endPoint.x = startPoint.x;
+                            endPoint.y = y_proj + startPoint.y;
+                            horizontal = false;
+                        }
+
+
                         markerTwo.transform.position = endPoint;
                         line.SetPosition(1, endPoint);
                         endTag = hit.collider.name;
@@ -111,23 +147,30 @@ public class DetectorMeasurementControl : MonoBehaviour
                         if (Input.GetMouseButtonDown(0))
                         {                            
                             clicks += 1;
-
+                            //Debug.Log("end point: " + endPoint);
                         }
                         break;
 
                     case 2:
+                        // set line and output length
                         if (Input.GetMouseButtonDown(0))
                         {
+                            // first fetch the appropriate row/column of data and write to text file
+                            GenerateData();
+
+                            // then deal with the line
                             StoreLine();
                             DisableMarkers();
                             clicks = 0;
                             DrawLine(lineData[lineData.Count - 1]); //Local variables are cleared so reload line from storage without markers
-                            Debug.Log(GetDistance(lineData[lineData.Count - 1])); //Distance output - feel free to hook up to UI
+                            
+                            //Debug.Log(GetDistance(lineData[lineData.Count - 1])); //Distance output - feel free to hook up to UI
                         }
                         break;
 
                     default:
-                        clicks = 0; //catchall for any edge cases
+                        //catchall for any edge cases
+                        clicks = 0; 
                         break;
                 }
             }
@@ -145,6 +188,68 @@ public class DetectorMeasurementControl : MonoBehaviour
                         
     }
 
+
+    // this function selects a subset of points from the Intensity matrix depending on the line drawn by the user - and writes this to the text file.
+    private void GenerateData()
+    {
+        // 1. Fetch the screen parameters and the input matrix
+        FetchScreenParameters();
+
+        // 2. Generate copies of the start / end position but in LOCAL coordinates
+        Vector3 localStartPoint = startPoint - screenOrigin.position;
+        Vector3 localEndPoint = endPoint - screenOrigin.position;
+
+        // 3. From the screen parameters, and the local start/end points - calculate the appropriate row/column bounds
+        float x1 = localStartPoint.x; // horizontal bound 1
+        float x2 = localEndPoint.x; // horizontal bound 1
+        float y1 = localStartPoint.y; // vertical bound 1
+        float y2 = localEndPoint.y; //vertical bound 2
+
+        float x_left = Mathf.Min(x1, x2); // leftmost horizontal bound
+        float x_right = Mathf.Max(x1, x2); // rightmost horizontal bound
+        float y_bottom = Mathf.Min(y1, y2); // lowest vertical bound
+        float y_top = Mathf.Max(y1, y2); // highest vertical bound
+
+        // 4. transform these bounds from local coordinate space to matrix space
+        x_left = x_left * screenResolution / screenWidth;
+        x_right = x_right * screenResolution / screenWidth;
+        y_bottom = y_bottom * screenResolution / screenHeight;
+        y_top = y_top * screenResolution / screenHeight;
+
+        // 5. loop through all the data within the bounds and export to a text file
+        FetchUserData((int)x_left, (int)x_right, (int)y_bottom, (int)y_top);
+    }
+
+    private void FetchUserData(int x_left, int x_right, int y_bottom, int y_top)
+    {
+        using (TextWriter tw = new StreamWriter(file))
+        {
+            tw.Write("x (m)" + "\t" + "y (m)" + "\t" + "Intensity");
+            tw.WriteLine();
+
+            for (int i = x_left; i <= x_right; i++)
+            {
+                for (int j = y_bottom; j <= y_top; j++)
+                {
+                    float position_x = (i - x_left) * screenWidth / screenResolution;
+                    float position_y = (j - y_bottom) * screenHeight / screenResolution;
+                    float intensity = matrix[i, j];
+                    tw.Write(position_x.ToString("#.000") + "\t" + position_y.ToString("#.000") + "\t" +  intensity.ToString("#.000"));
+                    tw.WriteLine();
+                }
+            }
+        }
+        Debug.Log("File Saved: " + file);
+    }
+
+    private void FetchScreenParameters()
+    {
+        //sets the parameters which will be used by the measurement tool
+        screenHeight = display.ScreenHeight;
+        screenWidth = display.ScreenWidth;
+        screenResolution = display.Resolution;
+        matrix = display.Matrix;
+    }
 
 
     Vector3 RoundVector(Vector3 objectPosition, int digits) //Method to handle rounding of transform components
@@ -214,10 +319,6 @@ public class DetectorMeasurementControl : MonoBehaviour
             LoadLines();
         }
     }
-
-
-
-
 
     private void StoreLine()
     {

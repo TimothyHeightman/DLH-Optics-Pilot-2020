@@ -26,7 +26,7 @@ public class Emailer : MonoBehaviour
 
     const string kSenderEmailAddress = "dlhoptics@gmail.com";
     const string kSenderPassword = "BigBrainTime9000";
-    const string file = "Assets/FRONTEND/DetectorScreen/img.txt";
+    const string file = "Assets/FRONTEND/DetectorScreen/img_reduced.txt";
 
 
     [SerializeField] string subject = "DLH Optics Lab Data";

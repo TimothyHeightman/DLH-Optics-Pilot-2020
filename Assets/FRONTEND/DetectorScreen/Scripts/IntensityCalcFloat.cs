@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System.IO;
 using UnityEngine;
 
@@ -5,6 +6,8 @@ public class IntensityCalcFloat : MonoBehaviour
 {
     public DetectorBehaviour detector;
     [SerializeField] string file = "Assets/FRONTEND/DetectorScreen/img.txt";
+
+    private GameObject gratCentre = null;
 
     //grating parameters (for no grating)
     public float maxSlitDim = 0.006f;//assuming a square grating 
@@ -27,6 +30,7 @@ public class IntensityCalcFloat : MonoBehaviour
     void Start()
     {
         resolution = Mathf.RoundToInt(Mathf.Pow(2, resolutionPower));  //QUICK FIX: Only currently works if resolution is a power of 2, due to fft algorithm
+        positionObject();
         bitmap = new int[resolution, resolution];
         //buildGrating();
         fill();
@@ -48,6 +52,23 @@ public class IntensityCalcFloat : MonoBehaviour
         //populate with code for grating and slit mesh if necessary
     }
 
+    //to create a temporary gameobject in the centre of the grating 
+    private void positionObject() {
+
+        Vector3 temp = transform.parent.position;
+        temp.y = temp.y + 1;
+
+        gratCentre = Instantiate(
+            gratCentre = new GameObject(),
+            temp,
+            Quaternion.identity           
+        );
+    }
+
+    //to get the centre of the grating 
+    public Vector3 getGratCentrePos() {
+        return gratCentre.transform.position;
+    }
 
     //creates high res bitmap for grating and slit 
     private void fill()
