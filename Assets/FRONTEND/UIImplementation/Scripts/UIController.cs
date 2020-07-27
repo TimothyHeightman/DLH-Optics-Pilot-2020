@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-enum Mode
+public enum Mode
 {
     Calibrate,
     Measure,
@@ -14,10 +14,11 @@ enum Mode
 
 public class UIController : MonoBehaviour
 {
+    public TooltrayController tooltray;
     public Button calibrate, measure, explore, data;
     public Camera cam;
 
-    Mode currentMode;
+    public Mode currentMode;
 
     void Start()
     {
@@ -32,30 +33,28 @@ public class UIController : MonoBehaviour
     public void calibrateClick()
     {
         currentMode = Mode.Calibrate;
-        cam.transform.position = new Vector3(0, 10, 0);
-        cam.transform.rotation = Quaternion.Euler(90, 0, 0);
+        tooltray.SetTrayContents(currentMode);
         Debug.Log("calibrate");
     }
 
     public void measureClick()
     {
         currentMode = Mode.Measure;
-        cam.transform.position = new Vector3(0, 0, -15);
-        cam.transform.rotation = Quaternion.identity;
+        tooltray.SetTrayContents(currentMode);
         Debug.Log("Measure");
     }
 
     public void exploreClick()
     {
         currentMode = Mode.Explore;
-        cam.transform.position = new Vector3(0, 0, -10);
+        tooltray.SetTrayContents(currentMode);
         Debug.Log("Explore");
     }
 
     public void dataClick()
     {
         currentMode = Mode.DataTake;
-        cam.transform.position = new Vector3(0, 0, -5);
+        tooltray.SetTrayContents(currentMode);
         Debug.Log("Data");
     }
 
