@@ -791,6 +791,7 @@ MonoBehaviour:
   buttonPrefab: {fileID: 9164850315061693927, guid: 641e0f281df8cbf4e82a581d05822b78,
     type: 3}
   dynamicTray: {fileID: 765014439}
+  activeTools: []
 --- !u!1 &592628648
 GameObject:
   m_ObjectHideFlags: 0
@@ -2533,7 +2534,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1925335276}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &1979498822
 GameObject:
   m_ObjectHideFlags: 0

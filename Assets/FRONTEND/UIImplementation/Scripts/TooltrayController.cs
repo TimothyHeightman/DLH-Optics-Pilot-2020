@@ -19,70 +19,93 @@ public class TooltrayController : MonoBehaviour
     int extraButtons;
     int maxDynamicButtons = 3;
 
-     List<Tool> activeTools;
+    public List<Tool> activeTools;
     
     void Start()
     {
+        //Creates the blank buttons before we apply tools to them, held in dynamicTools
+
+
+        activeTools = new List<Tool>();
         dynamicButtons = new List<GameObject>();
         for (int i = 0; i < maxDynamicButtons; i++)
         {
             GameObject tempButton = Instantiate(buttonPrefab);
-            tempButton.transform.SetParent(dynamicTray.transform);
+            tempButton.transform.SetParent(dynamicTray.transform); //Places buttons in parents vertical layout
             tempButton.transform.localScale = new Vector3(1, 1, 1);
             dynamicButtons.Add(tempButton);
         }
         
         tooltrayRect = gameObject.GetComponent<RectTransform>();            
 
-        helpButton.onClick.AddListener(startHelp);
+        helpButton.onClick.AddListener(startHelp);       
         labScriptButton.onClick.AddListener(startLabScript);
-
-    }
-
-
-    void Update()
-    {
-
     }
 
     public void SetTrayContents(Mode desiredMode)
-    {     
+    {
+        if (activeTools != null)
+        {
+            foreach (var tool in activeTools)
+            {
+                tool.enabled = false;
+            }
+            activeTools.Clear();
+        }        
 
         switch (desiredMode)
-        {
+        {     
+            //Depending on the current mode different tools are created/enabled
+
             case Mode.Calibrate:                
-                extraButtons = 3;                
-                dynamicButtons[0].AddComponent<InventoryTool>();
-                dynamicButtons[1].AddComponent<MoveTool>();
-                dynamicButtons[2].AddComponent<RotateTool>();
+                extraButtons = 3;
+
+                CreateTool<InventoryTool>(dynamicButtons[0]);
+                CreateTool<MoveTool>(dynamicButtons[1]);
+                CreateTool<RotateTool>(dynamicButtons[2]);                
                 break;
 
             case Mode.Measure:
                 extraButtons = 2;
-                dynamicButtons[0].AddComponent<DistanceMeasTool>();
-                dynamicButtons[1].AddComponent <AngleMeasTool>();
+
+                CreateTool<DistanceMeasTool>(dynamicButtons[0]);
+                CreateTool<AngleMeasTool>(dynamicButtons[1]);
                 dynamicButtons[2].SetActive(false); 
                 break;
 
             case Mode.Explore:
                 extraButtons = 3;
-                dynamicButtons[0].AddComponent<InventoryTool>();
-                dynamicButtons[1].AddComponent<MoveTool>();
-                dynamicButtons[2].SetActive(false);
+
+                CreateTool<InventoryTool>(dynamicButtons[0]);
+                CreateTool<MoveTool>(dynamicButtons[1]);
+                CreateTool<InvestigateTool>(dynamicButtons[2]);
                 break;
 
             case Mode.DataTake:
                 extraButtons = 1;
-                dynamicButtons[0].AddComponent<TakeDataTool>();
+
+                CreateTool<TakeDataTool>(dynamicButtons[0]);
                 dynamicButtons[1].SetActive(false);
                 dynamicButtons[2].SetActive(false);
                 break;
         }
-        for (int i = 0; i < extraButtons; i++)
-        {
-            dynamicButtons[i].SetActive(true);
-        }
         tooltrayRect.sizeDelta = new Vector2(tooltrayRect.sizeDelta.x, minheight + (extraButtons * buttonUnitheight));
+    }
+
+    void CreateTool<T>(GameObject rootObject) where T : Tool
+    {
+        //Generic method to create Tools from their classes that inherit from Tool
+
+        T tool = rootObject.GetComponent<T>();
+        if (tool == null) //check to see if we already have a instance of this Tool attached
+        {
+            rootObject.AddComponent<T>();
+            tool = rootObject.GetComponent<T>();
+            rootObject.GetComponent<Button>().onClick.AddListener(tool.ButtonInteract);
+        }
+        tool.enabled = true;
+        rootObject.SetActive(true);
+        activeTools.Add(tool);
     }
 
     void startHelp()
