@@ -26,17 +26,12 @@ public class PropagationSystem : MonoBehaviour
             {
                 throw new ArgumentOutOfRangeException("The propagation beams are more than the actual. They are given to be : " + value + "Actual size is : " + _discreteBeams.Count);
             }
-            if(value <0)
-            {
-                throw new ArgumentOutOfRangeException("the beams in propagation are beckoming negative in numbers.");
-            }
             __numberOfBeamsInPropagation = value;
         } 
     }
 
     private List<GameObject> _keysForClear = new List<GameObject>();
     private Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>> _separateObjectInteractions = new Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>>();
-    private Dictionary<GameObject, bool> _sendToMultiBeamInteractors = new Dictionary<GameObject, bool>();
     private Dictionary<int, Tuple<List<float3>, List<float3>>> _collisionPositionsPerBeam = new Dictionary<int, Tuple<List<float3>, List<float3>>>();
     private Dictionary<GameObject, Tuple<Vector3, Quaternion>> _ObjectOfInteractionPrevPosition = new Dictionary<GameObject, Tuple<Vector3, Quaternion>>();
     private bool _remodelling = false;
@@ -51,7 +46,7 @@ public class PropagationSystem : MonoBehaviour
             int beamPropagationSectionInteger;
             int discreteBeaminteger;
 
-            
+            _remodelling = false;
             ;
             if (CheckForSceneUpdates(out discreteBeaminteger, out beamPropagationSectionInteger))
             {
@@ -60,17 +55,15 @@ public class PropagationSystem : MonoBehaviour
             }
             else
             {
-                ;
-                if (!_remodelling)
+                if (_separateObjectInteractions.Count != 0)
                 {
                     SendMultiBeams();
                 }
-                
                 return;
             }
-            _remodelling = false;
+            
         }
-        ;
+
         var descreteBeamsTointeractIndeces = new List<int>();
 
         for (int i = 0; i < _discreteBeams.Count; i++)
@@ -176,27 +169,13 @@ public class PropagationSystem : MonoBehaviour
             {
                 for (int i = 0; i < _separateObjectInteractions[el].Item1.Count; i++)
                 {
-                    if (!ChechFloat3IsZero( _discreteBeams[_separateObjectInteractions[el].Item1[i]].DirectionOfPropagation) )
-                    {
-                        _NumberOfBeamsInPropagation--;
-                        limitedBeamFinalPositionList.Add(_separateObjectInteractions[el].Item2[i].point);
-                        limitedBeamIndecesList.Add(_separateObjectInteractions[el].Item1[i]);
-                    }
+                    _NumberOfBeamsInPropagation--;
+                    limitedBeamFinalPositionList.Add(_separateObjectInteractions[el].Item2[i].point);
+                    limitedBeamIndecesList.Add(_separateObjectInteractions[el].Item1[i]);
                 }
                 if (!el.TryGetComponent<MultiBeamInteractionI>(out multiBeamInteraction))
                 {
                     _keysForClear.Add(el);
-                }
-                else
-                {
-                    if (!_sendToMultiBeamInteractors.ContainsKey(el))
-                    {
-                        _sendToMultiBeamInteractors.Add(el, false);
-                    }
-                    else
-                    {
-                        _sendToMultiBeamInteractors[el] = false;
-                    }
                 }
                 ;
             }
@@ -308,26 +287,12 @@ public class PropagationSystem : MonoBehaviour
             {
                 for (int i = 0; i < _collisionPositionsPerBeam[el].Item1.Count; i++)
                 {
-                    if(i>= _collisionPositionsPerBeam[el].Item2.Count)
-                    {
-                        ;
-                        if(_collisionPositionsPerBeam[el].Item1.Count - _collisionPositionsPerBeam[el].Item2.Count == 1)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            throw new ArgumentOutOfRangeException("The difference starts and stops of propagation exceed the expected boundries.");
-                        }
-                    }
                     ray.origin = _collisionPositionsPerBeam[el].Item1[i];
                     ray.direction = _collisionPositionsPerBeam[el].Item2[i] - _collisionPositionsPerBeam[el].Item1[i];
-                     
                     if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
                     {
                         if (!_ObjectOfInteractionPrevPosition.ContainsKey(hit.collider.gameObject))
                         {
-                            ;
                             beamPropagationSectionInteger = i;
                             discreteBeamInteger = el;
 
@@ -338,7 +303,6 @@ public class PropagationSystem : MonoBehaviour
                         if (hit.collider.gameObject.transform.position != _ObjectOfInteractionPrevPosition[hit.collider.gameObject].Item1 |
                             hit.collider.gameObject.transform.rotation != _ObjectOfInteractionPrevPosition[hit.collider.gameObject].Item2)
                         {
-                            ;
                             beamPropagationSectionInteger = i;
                             discreteBeamInteger = el;
 
@@ -348,7 +312,6 @@ public class PropagationSystem : MonoBehaviour
                         }
                         if (!ChechTwofloat3sEqual(_collisionPositionsPerBeam[el].Item2[i], Vector3ToFloat3(hit.point)))
                         {
-                            ;
                             beamPropagationSectionInteger = i;
                             discreteBeamInteger = el;
                             return true;
@@ -356,15 +319,13 @@ public class PropagationSystem : MonoBehaviour
                     }
                     else
                     {
-                        if (Magniitude(_collisionPositionsPerBeam[el].Item2[i] - _collisionPositionsPerBeam[el].Item1[i]) != maxLengthOfPropagation)
+                        if(Magniitude(_collisionPositionsPerBeam[el].Item2[i] - _collisionPositionsPerBeam[el].Item1[i]) != maxLengthOfPropagation)
                         {
-                            ;
                             beamPropagationSectionInteger = i;
                             discreteBeamInteger = el;
                             return true;
                         }
                     }
-                    
                 }
             }
         }
@@ -418,22 +379,22 @@ public class PropagationSystem : MonoBehaviour
         MultiBeamInteractionI multiBeamInteraction;
         foreach (var el in _separateObjectInteractions.Keys)
         {
-            if (!_sendToMultiBeamInteractors[el])
+            var discreteBeamsForInteraction = new List<DiscreteBeam>();
+            foreach (var index in _separateObjectInteractions[el].Item1)
             {
-                var discreteBeamsForInteraction = new List<DiscreteBeam>();
-                foreach (var index in _separateObjectInteractions[el].Item1)
-                {
-                    discreteBeamsForInteraction.Add(_discreteBeams[index]);
-                }
-
-                if (el.TryGetComponent<MultiBeamInteractionI>(out multiBeamInteraction))
-                {
-                    multiBeamInteraction.MultiBeamGetter(discreteBeamsForInteraction, _separateObjectInteractions[el].Item2);
-                }
-
-                _sendToMultiBeamInteractors[el] = true;
+                discreteBeamsForInteraction.Add(_discreteBeams[index]);
             }
+
+            if (el.TryGetComponent<MultiBeamInteractionI>(out multiBeamInteraction))
+            {
+                multiBeamInteraction.MultiBeamGetter(discreteBeamsForInteraction, _separateObjectInteractions[el].Item2);
+            }
+
+            _keysForClear.Add(el);
+
         }
+
+        ClearInteractionObjectKeys();
     }
 
     private void Project()
@@ -473,20 +434,6 @@ public class PropagationSystem : MonoBehaviour
         }
     }
 
-    private void ClearBeamsFromMultiBeamInteractions(int beamIndex)
-    {
-        foreach(var el in _separateObjectInteractions.Keys)
-        {
-            if (_separateObjectInteractions[el].Item1.Contains(beamIndex))
-            {
-                _sendToMultiBeamInteractors[el] = false;
-                var index = _separateObjectInteractions[el].Item1.IndexOf(beamIndex);
-                _separateObjectInteractions[el].Item1.RemoveAt(index);
-                _separateObjectInteractions[el].Item2.RemoveAt(index);
-            }
-        }
-    }
-
     private void CutBeams(int firstBeamInteger, int beamPropagationSectionInteger)
     {
         Guid parentId = _discreteBeams[firstBeamInteger].ParentId;
@@ -501,44 +448,59 @@ public class PropagationSystem : MonoBehaviour
         {
             if(_discreteBeams[i].ParentId == parentId)
             {
-                if (_collisionPositionsPerBeam[i].Item1.Count > beamPropagationSectionInteger)
+                ray.origin = _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger];
+                ray.direction = _collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger] - _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger];
+                if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
                 {
-                    ray.origin = _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger];
-                    ray.direction = _collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger] - _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger];
-                    if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
+                    if (!ChechTwofloat3sEqual(_collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger], Vector3ToFloat3(hit.point)))
                     {
-                        if (!ChechTwofloat3sEqual(_collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger], Vector3ToFloat3(hit.point)))
+                        if (ChechFloat3IsZero(_discreteBeams[i].DirectionOfPropagation))
                         {
-                            if (ChechFloat3IsZero(_discreteBeams[i].DirectionOfPropagation))
-                            {
-                                _NumberOfBeamsInPropagation++;
-                            }
-                            ClearBeamsFromMultiBeamInteractions(i);
-                            _collisionPositionsPerBeam[i].Item1.RemoveRange(beamPropagationSectionInteger + 1, _collisionPositionsPerBeam[i].Item1.Count - 1 - beamPropagationSectionInteger);
-                            _collisionPositionsPerBeam[i].Item2.RemoveRange(beamPropagationSectionInteger, _collisionPositionsPerBeam[i].Item2.Count - beamPropagationSectionInteger);
-                            CutBeam(i, _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]);
-                            indecesToClear.Add(i);
+                            _NumberOfBeamsInPropagation++;
                         }
+                        _collisionPositionsPerBeam[i].Item1.RemoveRange(beamPropagationSectionInteger+1, _collisionPositionsPerBeam[i].Item1.Count - 1 - beamPropagationSectionInteger);
+                        _collisionPositionsPerBeam[i].Item2.RemoveRange(beamPropagationSectionInteger, _collisionPositionsPerBeam[i].Item2.Count - beamPropagationSectionInteger);
+                        CutBeam(i, _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]);
+                        indecesToClear.Add(i);
                     }
-                    else
+                }
+                else
+                {
+                    if(Magniitude(_collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger] - _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger])!=maxLengthOfPropagation)
                     {
-                        if (Magniitude(_collisionPositionsPerBeam[i].Item2[beamPropagationSectionInteger] - _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]) != maxLengthOfPropagation)
+                        if (ChechFloat3IsZero(_discreteBeams[i].DirectionOfPropagation))
                         {
-                            if (ChechFloat3IsZero(_discreteBeams[i].DirectionOfPropagation))
-                            {
-                                _NumberOfBeamsInPropagation++;
-                            }
-                            ;
-                            ClearBeamsFromMultiBeamInteractions(i);
-                            _collisionPositionsPerBeam[i].Item1.RemoveRange(beamPropagationSectionInteger + 1, _collisionPositionsPerBeam[i].Item1.Count - 1 - beamPropagationSectionInteger);
-                            _collisionPositionsPerBeam[i].Item2.RemoveRange(beamPropagationSectionInteger, _collisionPositionsPerBeam[i].Item2.Count - beamPropagationSectionInteger);
-                            CutBeam(i, _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]);
-                            indecesToClear.Add(i);
+                            _NumberOfBeamsInPropagation++;
                         }
+                        ;
+                        _collisionPositionsPerBeam[i].Item1.RemoveRange(beamPropagationSectionInteger+1, _collisionPositionsPerBeam[i].Item1.Count - 1 - beamPropagationSectionInteger);
+                        _collisionPositionsPerBeam[i].Item2.RemoveRange(beamPropagationSectionInteger, _collisionPositionsPerBeam[i].Item2.Count - beamPropagationSectionInteger);
+                        CutBeam(i, _collisionPositionsPerBeam[i].Item1[beamPropagationSectionInteger]);
+                        indecesToClear.Add(i);
                     }
                 }
             }
         }
+
+        foreach(var el in _separateObjectInteractions.Keys)
+        {
+            MultiBeamInteractionI multiBeamInteraction;
+            if (el.TryGetComponent<MultiBeamInteractionI>(out multiBeamInteraction))
+            {
+                foreach(var indexToClear in indecesToClear)
+                {
+                    var index = _separateObjectInteractions[el].Item1.IndexOf(indexToClear);
+                    if (index != -1)
+                    {
+                        _separateObjectInteractions[el].Item1.RemoveAt(index);
+                        _separateObjectInteractions[el].Item2.RemoveAt(index);
+                    }
+                }
+                
+            }
+                
+        }
+
     }
 
     private void CutBeam(int beamIndex, float3 cutOffPosition)
@@ -569,6 +531,8 @@ public class PropagationSystem : MonoBehaviour
     {
         
     }
+
+    
 
 }
 

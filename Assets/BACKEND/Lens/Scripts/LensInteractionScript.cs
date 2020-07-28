@@ -17,33 +17,16 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
 
     public void Start()
     {
-        if (Math.Abs(radius1) < length | Math.Abs(radius2) < length)
-        {
-            throw new Exception("One of the radiuses is less than the legth.");
-        }
-        if (radius1>0 & radius2 > 0)
+        if(radius1>0 & radius2 > 0)
         {
             if(radius1+radius2<= thinkness+ Math.Sqrt(-length * 2 + radius1*2) + Math.Sqrt(-length * 2 + radius2 * 2))
             {
                 throw new ArgumentOutOfRangeException("The given values for the lens are impossible");
             }
         }
-        if (radius1 * radius2 < 0)
+        if( Math.Abs( radius1) < length | Math.Abs(radius2) < length)
         {
-            if (radius1 < 0)
-            {
-                if (math.abs(radius1) - math.sqrt(radius1 * radius1 - length * length) + thinkness - (math.abs(radius2) - math.sqrt(radius2 * radius2 - length * length)) < 0)
-                {
-                    throw new ArgumentOutOfRangeException("The given values for the lens are impossible");
-                }
-            }
-            else
-            {
-                if (math.abs(radius2) - math.sqrt(radius2 * radius2 - length * length) + thinkness - (math.abs(radius1) - math.sqrt(radius1 * radius1 - length * length)) < 0)
-                {
-                    throw new ArgumentOutOfRangeException("The given values for the lens are impossible");
-                }
-            }
+            throw new Exception("One of the radiuses is less than the legth."); 
         }
     }
 
@@ -78,16 +61,6 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
             zf = Math.Sqrt(-length * length + radius1 * radius1) + thinkness / 2;
             zb = -Math.Sqrt(-length * length + radius2 * radius2) - thinkness / 2;
         }
-        else if (radius1 < 0 & radius2 > 0)
-        {
-            zf = -Math.Sqrt(-length * length + radius1 * radius1) + thinkness / 2;
-            zb = -Math.Sqrt(-length * length + radius2 * radius2) - thinkness / 2;
-        }
-        else if (radius2 < 0 & radius1 > 0)
-        {
-            zf = Math.Sqrt(-length * length + radius1 * radius1) + thinkness / 2;
-            zb = Math.Sqrt(-length * length + radius2 * radius2) - thinkness / 2;
-        }
         else
         {
             throw new Exception("Unsupported type of lens");
@@ -112,7 +85,6 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
         parallelLensInteraction.radius2 = radius2;
         parallelLensInteraction.delta = delta;
 
-        ;
 
         var handle = parallelLensInteraction.Schedule(discreteBeamsDirection.Length, 1);
 
