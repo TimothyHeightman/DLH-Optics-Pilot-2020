@@ -12,9 +12,15 @@ using UnityEngine;
 public class LensInteractionScript : MonoBehaviour, InteractionScriptI
 {
     public GameObject LensObject;
+    //radius1 and radius2 are the radii of the two spheres that define the lens. 1 is for the lens at z>0 and 2 for z<0. Z is consideret in local space.
+    //thinkness is the distance between the two spherical surfaces at the edge of the lens.
     public double radius1, radius2, thinkness, length, coef;
+    //delta is used for checking differences between the magnitudes of two vetors
     private float delta = 0.0000001f;
 
+    /// <summary>
+    /// Checks if the given values create a possible lens, which is if the two sferes overlap.
+    /// </summary>
     public void Start()
     {
         if (Math.Abs(radius1) < length | Math.Abs(radius2) < length)
@@ -47,6 +53,13 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
         }
     }
 
+
+    /// <summary>
+    /// Intecation with discretebeam gets the beams and prepares them for multithreaded calculation and assigns the value after calculation.
+    /// </summary>
+    /// <param name="discreteBeams">All the beams to interact with</param>
+    /// <param name="hit">The collision details for all beams</param>
+    /// <returns></returns>
     public List<List<Tuple<float3, float3, float3, float3>>> InteractWithDescreteBeam(List<DiscreteBeam> discreteBeams, List<RaycastHit> hit)
     {
 
@@ -146,17 +159,33 @@ public class LensInteractionScript : MonoBehaviour, InteractionScriptI
 
     }
 
+    /// <summary>
+    /// When conversion from local to global coordinates happen, this function makes the transition ignore the scale of the local coordinate system
+    /// </summary>
+    /// <param name="position">local position</param>
+    /// <param name="scale">scale of gameObject</param>
+    /// <returns></returns>
     private Vector3 ReverseScalingOnInverse(Vector3 position, Vector3 scale)
     {
         return new Vector3(position.x * scale.x, position.y * scale.y, position.z * scale.z);
     }
 
+    /// <summary>
+    /// Directly transforms point from global to local space and ignores the scale of the local coordinate system
+    /// </summary>
+    /// <param name="position"></param>
+    /// <param name="scale"></param>
+    /// <returns></returns>
     private Vector3 TransformPoint(Vector3 position, Vector3 scale)
     {
         return LensObject.transform.TransformPoint(new Vector3(position.x / scale.x, position.y / scale.y, position.z / scale.z));
     }
 }
 
+
+/// <summary>
+/// The job that defines the lens interaction
+/// </summary>
 internal struct ParallelLensInteraction : IJobParallelFor
 {
     public NativeArray<float3> discreteBeamsDirection;
@@ -175,7 +204,10 @@ internal struct ParallelLensInteraction : IJobParallelFor
         RefractSingleBeam(index);
     }
 
-
+    /// <summary>
+    /// refracts one beam by finding the actual collision position refracting once finding second collision position and refracting a second time
+    /// </summary>
+    /// <param name="index">Index of descretebeam</param>
     private void RefractSingleBeam(int index)
     {
         ;
@@ -208,6 +240,14 @@ internal struct ParallelLensInteraction : IJobParallelFor
         }
     }
 
+    /// <summary>
+    /// Calculates the collision position between a beam and the sphere part of a lens
+    /// </summary>
+    /// <param name="incomingPoint">Point from which ray is comming</param>
+    /// <param name="incomingDirection">Direction in which beam is comming</param>
+    /// <param name="radius">radius of current sphere</param>
+    /// <param name="zp">position of the centre of the sphere(x=0,y=0)</param>
+    /// <returns></returns>
     private float3 CalculatePointOfIntersection(float3 incomingPoint, float3 incomingDirection, double radius, double zp)
     {
 
@@ -289,6 +329,14 @@ internal struct ParallelLensInteraction : IJobParallelFor
         }
     }
 
+    /// <summary>
+    /// Caclulates direction after refraction
+    /// </summary>
+    /// <param name="incomingDirection">Direction in which beam is comming</param>
+    /// <param name="interceptionPoint">Interception Point</param>
+    /// <param name="zp">position of the centre of the sphere(x=0,y=0)</param>
+    /// <param name="totalCoef">Fraction of the refraction coeficients, nominator is for outer space, denominator for inside space</param>
+    /// <returns></returns>
     private float3 CalculateRefractionDirection(float3 incomingDirection, float3 interceptionPoint, float zp, float totalCoef)
     {
         var normal = Normalize( new float3(2 * interceptionPoint.x, 2 * interceptionPoint.y, 2 * (interceptionPoint.z - zp)));
@@ -350,6 +398,13 @@ internal struct ParallelLensInteraction : IJobParallelFor
         return float3.x * float3.x + float3.y * float3.y + float3.z * float3.z;
     }
 
+    /// <summary>
+    /// Calculates coordinates of a beam propagated by certain distance
+    /// </summary>
+    /// <param name="incomingPoint"></param>
+    /// <param name="incomingDirection"></param>
+    /// <param name="t">propagation distance</param>
+    /// <returns></returns>
     private float3 CalculatePointFromT(float3 incomingPoint, float3 incomingDirection, float t)
     {
         return new float3(t * incomingDirection.x + incomingPoint.x, t * incomingDirection.y + incomingPoint.y, t * incomingDirection.z + incomingPoint.z);

@@ -11,14 +11,21 @@ public class PropagationSystem : MonoBehaviour
 {
     private List<DiscreteBeam> _discreteBeams = new List<DiscreteBeam>();
     private List<GameObject> _lasers = new List<GameObject>();
+
+    //the maximum length of beam propagation when there is no interaction.
     private float maxLengthOfPropagation = 100;
     private int __numberOfBeamsInPropagation = 0;
 
+    // Holds the linerenderers per beam
     private List<GameObject> _lines = new List<GameObject>();
+    //connects the linerenderes with their appropriate beam
     private Dictionary<Guid, GameObject> _lineRenderersConnections = new Dictionary<Guid, GameObject>();
     
 
     private float _delta = 0.00000001f;
+    /// <summary>
+    /// checks if the varible is taking allowed values
+    /// </summary>
     private int _NumberOfBeamsInPropagation { 
         get { return __numberOfBeamsInPropagation; } 
         set { 
@@ -34,16 +41,35 @@ public class PropagationSystem : MonoBehaviour
         } 
     }
 
+    //holds how many of the objects from _separateObjectInteractions should be cleared from the variable
     private List<GameObject> _keysForClear = new List<GameObject>();
+
+    //stores the collisions per object for rach index in beams and their appropriate collision params
     private Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>> _separateObjectInteractions = new Dictionary<GameObject, Tuple<List<int>, List<RaycastHit>>>();
+
+    //holds if the bunch of beams per multibeam object has been send to them
     private Dictionary<GameObject, bool> _sendToMultiBeamInteractors = new Dictionary<GameObject, bool>();
+
+    //holds all entry and exit positions for all beams when colliding
+
     private Dictionary<int, Tuple<List<float3>, List<float3>>> _collisionPositionsPerBeam = new Dictionary<int, Tuple<List<float3>, List<float3>>>();
+
+    //holds position and rotation values for all interacting objects
     private Dictionary<GameObject, Tuple<Vector3, Quaternion>> _ObjectOfInteractionPrevPosition = new Dictionary<GameObject, Tuple<Vector3, Quaternion>>();
+    
+    //Variable that is true if there were movements with objects while propagating beams
     private bool _remodelling = false;
 
     [SerializeField]
     public GameObject prefabLine;
 
+    /// <summary>
+    ///keeps in check the amount of beams in propagation if zero checks if repropagation is required which need beams to be cut down._remodeling holds if repropagation is required if not all beams are propagated before a new update is present.
+    /// The update propagates all beams once per call.This means chec for collision and propagate through that object if there is one.
+    ///Finds all beams that are not finished with propagation and sorts them by object they hit and propagates the one that do not hit anything.Sets the job for the limited ones.
+    ///Going by the interaction objects it gives the set beams that interact with them and for multibeams interactions it keeps all of them for future use.
+    ///Then after propagations for objects and limited it assigns the values to each beam.
+    /// </summary>
     private void Update()
     {
         if (_NumberOfBeamsInPropagation == 0 | _remodelling)
@@ -90,6 +116,8 @@ public class PropagationSystem : MonoBehaviour
         var limitedBeamFinalPosition = new NativeList<float3>(Allocator.TempJob);
         var limitedBeamIndeces = new List<int>();
 
+        //finds all the objects beams are interacting with and assigns the beams to objects for future interaction
+        //and finds beams that need to be propagated to infinity
         for (int i = 0; i < descreteBeamsTointeractIndeces.Count; i++)
         {
             ray.origin = _discreteBeams[descreteBeamsTointeractIndeces[i]].LastCoordinate;
@@ -147,6 +175,8 @@ public class PropagationSystem : MonoBehaviour
         var limitedBeamFinalPositionList = new List<float3>();
         var limitedBeamIndecesList = new List<int>();
         ;
+
+        //goes through all object interactions and sends the bach of beams each should be interacting with
         foreach (var el in _separateObjectInteractions.Keys)
         {
             var discreteBeamsForInteraction = new List<DiscreteBeam>();
@@ -219,6 +249,10 @@ public class PropagationSystem : MonoBehaviour
         ClearInteractionObjectKeys();
     }
 
+    /// <summary>
+    /// Adds beams in propagation system memory
+    /// </summary>
+    /// <param name="discreteBeams">Them beams</param>
     public void AddNewBeams(List<DiscreteBeam> discreteBeams)
     {
         var counter = 0;
@@ -231,11 +265,23 @@ public class PropagationSystem : MonoBehaviour
         _NumberOfBeamsInPropagation += discreteBeams.Count;
     }
 
+    /// <summary>
+    /// Adds laser to propagation system memory
+    /// </summary>
+    /// <param name="laser"></param>
     public void AddLaser(GameObject laser)
     {
         _lasers.Add(laser);
     }
 
+    /// <summary>
+    /// Assigns values after interaction
+    /// </summary>
+    /// <param name="beamindex">The index of the beam in the system</param>
+    /// <param name="movementPoint1">First point beam has passed through while interacting</param>
+    /// <param name="movementPoint2">Second point beam has passed through while interacting, could be zero for nonexisting</param>
+    /// <param name="movementPoint3">Third point beam has passed through while interacting, could be zero for nonexisting</param>
+    /// <param name="direction">Final direction of the beam</param>
     private void AssignValuesAfterInteraction(int beamindex, float3 movementPoint1, float3 movementPoint2, float3 movementPoint3, float3 direction)
     {
         var beam = _discreteBeams[beamindex];
@@ -268,6 +314,11 @@ public class PropagationSystem : MonoBehaviour
         _discreteBeams[beamindex] = beam;
     }
 
+    /// <summary>
+    /// Sends the beams to "ïnfinity"
+    /// </summary>
+    /// <param name="beamindeces">Indeces of beams to be propagated</param>
+    /// <param name="positions">Final position of propagation</param>
     private void AssignValuesForLimitedPropagation(List<int> beamindeces, List<float3> positions)
     {
         if (beamindeces.Count != positions.Count)
@@ -296,6 +347,12 @@ public class PropagationSystem : MonoBehaviour
         return (a.x - b.x) * (a.x - b.x) < _delta & (a.y - b.y) * (a.y - b.y) < _delta & (a.z - b.z) * (a.z - b.z) < _delta;
     }
 
+    /// <summary>
+    /// Checks if any of the objects that are part of interaction have moved
+    /// </summary>
+    /// <param name="discreteBeamInteger">returned beam index that has experienced movement</param>
+    /// <param name="beamPropagationSectionInteger">returned beam position index where the first interaction with the object is</param>
+    /// <returns></returns>
     private bool CheckForSceneUpdates(out int discreteBeamInteger, out int beamPropagationSectionInteger)
     {
         var hit = new RaycastHit();
@@ -374,6 +431,9 @@ public class PropagationSystem : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Clear the keys in the dictionary that stores interaction object
+    /// </summary>
     private void ClearInteractionObjectKeys()
     {
         foreach (var el in _keysForClear)
@@ -413,6 +473,9 @@ public class PropagationSystem : MonoBehaviour
         return Convert.ToSingle(Math.Sqrt(float3.x * float3.x + float3.y * float3.y + float3.z * float3.z));
     }
 
+    /// <summary>
+    /// Sends beams to object that jave interactions between beams. It is crution to know all and send them at the same time.
+    /// </summary>
     private void SendMultiBeams()
     {
         MultiBeamInteractionI multiBeamInteraction;
@@ -436,6 +499,9 @@ public class PropagationSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Visualize the beams that are on the outer layer
+    /// </summary>
     private void Project()
     {
         foreach(var el in _discreteBeams)
@@ -458,6 +524,11 @@ public class PropagationSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates linerenderers
+    /// </summary>
+    /// <param name="discreteBeam">Beam</param>
+    /// <param name="line">Its corresponding linerenderer</param>
     private void UpdatePointsOnLinerenderer(DiscreteBeam discreteBeam, GameObject line)
     {
         var lineRenderer = line.GetComponent<LineRenderer>();
@@ -473,6 +544,10 @@ public class PropagationSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Clears all stacked beams for sending to multibeam interaction
+    /// </summary>
+    /// <param name="beamIndex"></param>
     private void ClearBeamsFromMultiBeamInteractions(int beamIndex)
     {
         foreach(var el in _separateObjectInteractions.Keys)
@@ -487,6 +562,11 @@ public class PropagationSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Finds and sends beams to be reprogated
+    /// </summary>
+    /// <param name="firstBeamInteger">The first beam that requires cutting</param>
+    /// <param name="beamPropagationSectionInteger">The integer of the posiiton of the beam that has changed</param>
     private void CutBeams(int firstBeamInteger, int beamPropagationSectionInteger)
     {
         Guid parentId = _discreteBeams[firstBeamInteger].ParentId;
@@ -541,6 +621,11 @@ public class PropagationSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cuts individual beams
+    /// </summary>
+    /// <param name="beamIndex">index of beam</param>
+    /// <param name="cutOffPosition">position that has changed</param>
     private void CutBeam(int beamIndex, float3 cutOffPosition)
     {
         bool exceptionChecker = true;

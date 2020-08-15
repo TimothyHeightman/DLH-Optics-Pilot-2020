@@ -8,7 +8,12 @@ using Unity.Collections;
 
 public class MirrorInteractionScript : MonoBehaviour, InteractionScriptI
 {
-
+    /// <summary>
+    /// Sets up the paralezation of the reflection for all beams
+    /// </summary>
+    /// <param name="discreteBeams">All the beams</param>
+    /// <param name="hit">Beams`s corresponding collision details</param>
+    /// <returns></returns>
     public List<List<Tuple<float3, float3, float3, float3>>> InteractWithDescreteBeam(List<DiscreteBeam> discreteBeams,List<RaycastHit> hit)
     {
         if(discreteBeams.Count != hit.Count)
@@ -76,18 +81,6 @@ public class MirrorInteractionScript : MonoBehaviour, InteractionScriptI
 
     }
 
-    private List<Tuple<List<float3>, float3>> ReflectingSingleRays(DiscreteBeam descreteBeam, RaycastHit hit)
-    {
-        var cos = Vector3.Dot(descreteBeam.DirectionOfPropagation, hit.normal.normalized);
-
-        var DirectionOfPropagation = descreteBeam.DirectionOfPropagation - ConvertToFloat3( cos * hit.normal.normalized * 2);
-
-        return new List<Tuple<List<float3>, float3>>()
-        {
-            new Tuple<List<float3>, float3> (new List<float3>(){ ConvertToFloat3( hit.point)},ConvertToFloat3( DirectionOfPropagation))
-        };
-    }
-
     private float3 ConvertToFloat3(Vector3 vector3)
     {
         return new float3(vector3.x, vector3.y, vector3.z);
@@ -95,6 +88,9 @@ public class MirrorInteractionScript : MonoBehaviour, InteractionScriptI
 
 }
 
+/// <summary>
+/// Job for reflection
+/// </summary>
 internal struct ParallelReflection: IJobParallelFor
 {
     public NativeArray<float3> discreteBeamsDirection;
@@ -111,12 +107,15 @@ internal struct ParallelReflection: IJobParallelFor
 
     public NativeArray<float3> raycastNormal;
 
+    /// <summary>
+    /// Reflects single beam
+    /// </summary>
+    /// <param name="index"></param>
     public void Execute(int index)
     {
         var cos = Vector3.Dot(discreteBeamsDirection[index], raycastNormal[index]);
 
         var DirectionOfPropagation = discreteBeamsDirection[index] - ConvertToFloat3(cos * raycastNormal[index]* 2);
-
 
         discreteBeamsPassingPosition1[index] = raycastHitPositions[index];
         discreteBeamsPassingPosition2[index] = float3.zero;
